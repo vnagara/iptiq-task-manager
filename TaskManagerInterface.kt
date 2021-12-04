@@ -16,7 +16,7 @@ interface TaskManagerInterface {
      * killing and removing from the TM list
     the oldest one
      */
-    fun addFifo(task: Task)
+    fun addFifo(task: Task): Task?
 
     /**
      * if the new
@@ -24,19 +24,19 @@ interface TaskManagerInterface {
     compared to any of the existing one, we remove the
     lowest priority that is the oldest, otherwise we skip it
      */
-    fun addByPriority(task: Task)
+    fun addByPriority(task: Task): Boolean
 
     /**
      * Kill a task
      */
     fun kill(task: Task)
 
+    fun killAll()
+
     /**
      * killing all processes with a specific priority
      */
     fun killGroup()
-
-    fun killAll()
 
     /**
      * to list() all the

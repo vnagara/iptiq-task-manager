@@ -11,12 +11,4 @@ Kill/KillGroup/KillAll
 
 fun main(args: Array<String>) {
     println("Hello World!")
-    val a = when (-1) {
-        1 -> 2
-        1 -> 1
-        else -> 3
-    }
-    val tm = TaskManager.instance.list()
-    println(a)
-
 }

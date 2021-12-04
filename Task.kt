@@ -2,7 +2,7 @@ import java.lang.RuntimeException
 import java.time.LocalDateTime
 
 data class Task(
-    var pid: Int, val priority: Priority = Priority.MEDIUM,
+    var pid: Int = 0, val priority: Priority = Priority.MEDIUM,
     private val created: LocalDateTime = LocalDateTime.now()) {
 
     enum class Priority {
@@ -12,10 +12,6 @@ data class Task(
     // Track last ID to create Task with default params
     companion object {
         private var lastId = 0
-    }
-
-    fun Task() {
-        pid = 4
     }
 
     // Calculate new PID by incrementing by 1
