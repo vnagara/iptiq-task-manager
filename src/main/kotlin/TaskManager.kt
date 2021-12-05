@@ -61,7 +61,7 @@ class TaskManager private constructor() : TaskManagerInterface {
         else Task(list(SortBy.PID).last().pid+1, priority)
     }
 
-    fun isMaxCapacity(): Boolean {
+    override fun isMaxCapacity(): Boolean {
         return tasks.size >= MAX_CAPACITY
     }
 

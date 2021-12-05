@@ -48,6 +48,11 @@ interface TaskManagerInterface {
     fun get(pid: Int): Task?
 
     /**
+     * @return True if Max Capacity has been reached
+     */
+    fun isMaxCapacity(): Boolean
+
+    /**
      * Kill a task
      */
     fun kill(task: Task): Boolean
