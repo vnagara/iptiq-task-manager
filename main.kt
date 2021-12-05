@@ -11,10 +11,17 @@ Kill/KillGroup/KillAll
 
 fun main(args: Array<String>) {
     val taskManager = TaskManager.instance
-    val test = TestTaskManager(taskManager)
-    test.populate()
-    test.testDuplicatePid()
-    test.testAdd()
-    test.testCapAdd()
-    test.testCapAddByPriority()
+    TestTaskManager(taskManager).run {
+        populate()
+        testDuplicatePid()
+        testAdd()
+        testCapAdd()
+        testCapAddByPriority()
+        testCapAddFifo()
+        taskManager.get(7)?.kill()
+        taskManager.addByPriority(taskManager.create(7, Task.Priority.HIGH))
+        testList()
+        testKillGroup(Task.Priority.MEDIUM)
+        testKillAll()
+    }
 }

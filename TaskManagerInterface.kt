@@ -1,7 +1,12 @@
+/**
+ * Interface was created for illustration purpose and cleaner code
+ * It could be merged into implementation to save development time, depends from a project
+ */
+
 interface TaskManagerInterface {
 
     enum class SortBy {
-        CREATED, PRIORITY, PID
+        PID, PRIORITY, CREATED
     }
 
     /**
@@ -9,12 +14,14 @@ interface TaskManagerInterface {
     accept new processes till when there is capacity
     inside the Task Manager, otherwise we won’t accept
     any new process
+     * @throws MaxCapacityLimitException on adding a task after the limit
      */
     fun add(task: Task): Task
 
     /**
      * killing and removing from the TM list
     the oldest one
+     @return Task if removed one otherwise null
      */
     fun addFifo(task: Task): Task?
 
@@ -27,6 +34,13 @@ interface TaskManagerInterface {
      * @return Removed Task if it was substituted. Null otherwise
      */
     fun addByPriority(task: Task): Task?
+
+    /**
+     * Create a new task
+     * Kind of factory fot Task
+     * @param pid Null to auto generate next PID
+     */
+    fun create(pid: Int? = null, priority: Task.Priority = Task.Priority.MEDIUM): Task
 
     /**
      * Find task by PID

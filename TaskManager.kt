@@ -1,17 +1,14 @@
 import TaskManagerInterface.SortBy
 
-internal const val MAX_CAPACITY = 7
+internal const val MAX_CAPACITY = 7 //Should be greater than 0
 
 class TaskManager private constructor() : TaskManagerInterface {
 
-    // Tracking the first index for fifo add
-    private val startIndex: Int = 0
-
     private val tasks = mutableListOf<Task>()
 
-    // As we keep list in memory then by YAGNI we don't create synchronized object or coroutines but use
-    // an unique single instance
     companion object {
+        // As we keep list in memory and have no threads then by YAGNI we don't create
+        // synchronized object and use an unique single instance
         val instance: TaskManager = TaskManager()
     }
 
@@ -21,14 +18,10 @@ class TaskManager private constructor() : TaskManagerInterface {
         )
     }
 
-    fun isMaxCapacity(): Boolean {
-        return tasks.size >= MAX_CAPACITY
-    }
-
-    // For show purposes use exception, return Boolean could suffice
+    // For illustration purposes use exception, return Boolean would suffice
     override fun add(task: Task): Task {
-        checkForUniquePid(task)
         if (isMaxCapacity()) throw MaxCapacityLimitException()
+        checkForUniquePid(task)
         tasks.add(task)
         return task
     }
@@ -36,29 +29,22 @@ class TaskManager private constructor() : TaskManagerInterface {
     override fun addFifo(task: Task): Task? {
         checkForUniquePid(task)
         tasks.add(task)
-        return tasks.removeFirstOrNull()
-    }
-
-    private fun getTheLowestPriorityTaskOrNull(): Task? {
-        var lowest: Task?
-        lowest = tasks.firstOrNull()
-        if (lowest == null) return null
-        if (lowest.priority == Task.Priority.LOW) return lowest
-        tasks.forEach {
-            if (it.priority == Task.Priority.LOW) return it  //finish here, found the lowest
-            if (it.priority < lowest!!.priority) lowest = it }
-        return lowest
+        if (isMaxCapacity()) {
+            return tasks.removeFirst()
+        }
+        return null
     }
 
     /**
-     * @return Removed Task if it was substituted. Null otherwise
+     * @return removed Task if it was killed. Null otherwise
      */
     override fun addByPriority(task: Task): Task? {
         checkForUniquePid(task)
         if (isMaxCapacity()) {
-            val lowestTask = getTheLowestPriorityTaskOrNull()
-            if (lowestTask != null && lowestTask.priority >= task.priority) return null
-            tasks.remove(lowestTask)
+            val lowestTask = list(SortBy.PRIORITY).first()
+            if (lowestTask.priority >= task.priority) return null
+            tasks.add(task)
+            kill(lowestTask)
             return lowestTask
         }
         tasks.add(task)
@@ -67,6 +53,16 @@ class TaskManager private constructor() : TaskManagerInterface {
 
     override fun get(pid: Int): Task? {
         return tasks.find { task -> pid == task.pid }
+    }
+
+    override fun create(pid: Int?, priority: Task.Priority): Task {
+        if (null != pid) return Task(pid, priority)
+        return if (tasks.isEmpty()) Task(FIRST_PID, priority)
+        else Task(list(SortBy.PID).last().pid+1, priority)
+    }
+
+    fun isMaxCapacity(): Boolean {
+        return tasks.size >= MAX_CAPACITY
     }
 
     override fun killGroup(priority: Task.Priority): Boolean {
@@ -80,14 +76,7 @@ class TaskManager private constructor() : TaskManagerInterface {
     override fun killAll() {
         tasks.clear()
     }
-
-    /**
-     * list() all the
-    running processes
-    sorting them by time of creation
-    (implicitly we can consider it the time in which has
-    been added to the TM), priority or id
-     */
+    
     override fun list(sortBy: SortBy): List<Task> {
         return when (sortBy) {
             SortBy.CREATED -> tasks

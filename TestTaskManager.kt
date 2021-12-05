@@ -1,24 +1,33 @@
 class TestTaskManager(val taskManager: TaskManager) {
 
     fun populate() {
-        taskManager.add(Task(1))
-        taskManager.addFifo(Task(2))
-        taskManager.addByPriority(Task(3, Task.Priority.LOW))
-        taskManager.add(Task())
-        taskManager.add(Task(5))
+        try {
+            taskManager.add(taskManager.create())
+            taskManager.addFifo(Task(1))
+            taskManager.addByPriority(Task(2, Task.Priority.LOW))
+            taskManager.add(taskManager.create())
+            taskManager.add(taskManager.create())
+        } catch (e: MaxCapacityLimitException) {
+            println(e.message)
+        }
     }
 
     fun testAdd() {
-        println("Adding new task...")
-        val new = taskManager.add(Task())
-        println("New task $new created")
+        print("Adding new task:\t")
+        try {
+            val new = taskManager.add(taskManager.create())
+            println("New task $new created")
+        } catch (e: MaxCapacityLimitException) {
+            println(e.message)
+        }
     }
 
     fun testDuplicatePid() {
         try {
-            println("Adding task duplicated task")
+            print("Adding duplicated task:\t")
             val dupTask = Task(3)
             taskManager.add(dupTask)
+            println("Duplicated task $dupTask was added")
         } catch (e: IllegalArgumentException) {
             println(e.message)
         }
@@ -26,14 +35,15 @@ class TestTaskManager(val taskManager: TaskManager) {
 
     private fun reachMaxCapacity() {
         try {
-            while (true) taskManager.add(Task())
+            while (true) taskManager.add(taskManager.create())
         } catch (e: MaxCapacityLimitException) {}
     }
 
     fun testCapAdd() {
         reachMaxCapacity()
+        print("Adding over limit:\t")
         try {
-            taskManager.add(Task())
+            taskManager.add(taskManager.create())
         } catch (e: MaxCapacityLimitException) {
             println(e.message)
         }
@@ -41,27 +51,43 @@ class TestTaskManager(val taskManager: TaskManager) {
 
     fun testCapAddFifo() {
         reachMaxCapacity()
-        Task.Priority.values().forEach { priority ->
-            try {
-                val result = taskManager.addFifo(Task(0, priority))
-                println("Task $result with $priority priority was inserted")
-            } catch (e: MaxCapacityLimitException) {
-                println("Task with priority $priority was not inserted. ${e.message}")
-            }
-        }
+        print("Trying to add FIFO:\t")
+        val task = taskManager.create()
+        taskManager.addFifo(task)
+        println("Task $task was inserted by FIFO")
     }
 
     fun testCapAddByPriority() {
         reachMaxCapacity()
         Task.Priority.values().forEach { priority ->
-            val atMaxCapacity = taskManager.isMaxCapacity()
-            val removedTask = taskManager.addByPriority(Task(0, priority))
-            if (null != removedTask && atMaxCapacity) {
-                println("Task with $priority priority was inserted instead of $removedTask")
+            print("Inserting $priority priority task:\t")
+            if (!taskManager.isMaxCapacity()) {
+                taskManager.addByPriority(taskManager.create(null, priority))
+                println("Task with $priority priority was inserted")
             } else {
-                if (!atMaxCapacity)
-                println("Task with $priority priority was not inserted")
+                val removedTask = taskManager.addByPriority(taskManager.create(null, priority))
+                if (null == removedTask) {
+                    println("Task with $priority priority was not inserted")
+                } else println("Task with $priority priority was inserted instead of $removedTask")
             }
+        }
+    }
+
+    fun testKillGroup(priority: Task.Priority) {
+        taskManager.killGroup(priority)
+        println("Kill $priority priority:\t" + taskManager.list())
+    }
+
+    fun testKillAll() {
+        taskManager.killAll()
+        println("Kill all result:\t" + taskManager.list())
+
+    }
+
+    fun testList() {
+        TaskManagerInterface.SortBy.values().forEach {
+            print("Sorted by $it:\t")
+            println(taskManager.list(it))
         }
     }
 }
