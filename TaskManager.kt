@@ -1,4 +1,6 @@
-internal const val MAX_CAPACITY = 100
+import TaskManagerInterface.SortBy
+
+internal const val MAX_CAPACITY = 7
 
 class TaskManager private constructor() : TaskManagerInterface {
 
@@ -19,14 +21,16 @@ class TaskManager private constructor() : TaskManagerInterface {
         )
     }
 
-    private fun isMaxCapacity(): Boolean {
+    fun isMaxCapacity(): Boolean {
         return tasks.size >= MAX_CAPACITY
     }
 
-    override fun add(task: Task) {
+    // For show purposes use exception, return Boolean could suffice
+    override fun add(task: Task): Task {
         checkForUniquePid(task)
-        if (isMaxCapacity()) throw CapacityLimitException()
+        if (isMaxCapacity()) throw MaxCapacityLimitException()
         tasks.add(task)
+        return task
     }
 
     override fun addFifo(task: Task): Task? {
@@ -35,34 +39,46 @@ class TaskManager private constructor() : TaskManagerInterface {
         return tasks.removeFirstOrNull()
     }
 
-    private fun getTheLowestPriorityTask(): Task? {
-        var lowest: Task
-        if (tasks.firstOrNull() == null) return null
-        lowest = tasks.first()
-        tasks.forEach { if (it.priority > lowest.priority) lowest = it }
+    private fun getTheLowestPriorityTaskOrNull(): Task? {
+        var lowest: Task?
+        lowest = tasks.firstOrNull()
+        if (lowest == null) return null
+        if (lowest.priority == Task.Priority.LOW) return lowest
+        tasks.forEach {
+            if (it.priority == Task.Priority.LOW) return it  //finish here, found the lowest
+            if (it.priority < lowest!!.priority) lowest = it }
         return lowest
     }
 
-    override fun addByPriority(task: Task): Boolean {
+    /**
+     * @return Removed Task if it was substituted. Null otherwise
+     */
+    override fun addByPriority(task: Task): Task? {
         checkForUniquePid(task)
         if (isMaxCapacity()) {
-            val lowestTask = getTheLowestPriorityTask()
-            if (lowestTask != null && lowestTask.priority >= task.priority) return false
+            val lowestTask = getTheLowestPriorityTaskOrNull()
+            if (lowestTask != null && lowestTask.priority >= task.priority) return null
             tasks.remove(lowestTask)
+            return lowestTask
         }
-        return tasks.add(task)
+        tasks.add(task)
+        return null
     }
 
-    override fun killGroup() {
-        TODO("Not yet implemented")
+    override fun get(pid: Int): Task? {
+        return tasks.find { task -> pid == task.pid }
     }
 
-    override fun kill(task: Task) {
-        TODO("Not yet implemented")
+    override fun killGroup(priority: Task.Priority): Boolean {
+        return tasks.removeAll { task -> priority == task.priority }
+    }
+
+    override fun kill(task: Task): Boolean {
+        return tasks.remove(task)
     }
 
     override fun killAll() {
-        TODO("Not yet implemented")
+        tasks.clear()
     }
 
     /**
@@ -72,8 +88,12 @@ class TaskManager private constructor() : TaskManagerInterface {
     (implicitly we can consider it the time in which has
     been added to the TM), priority or id
      */
-    override fun list(type: TaskManagerInterface.SortBy) {
-        MAX_CAPACITY
+    override fun list(sortBy: SortBy): List<Task> {
+        return when (sortBy) {
+            SortBy.CREATED -> tasks
+            // We assuming that list is small in memory so copy it
+            SortBy.PID -> tasks.sortedBy { task -> task.pid }
+            SortBy.PRIORITY -> tasks.sortedBy { task -> task.priority }
+        }
     }
-
 }

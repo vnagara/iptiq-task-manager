@@ -1,9 +1,13 @@
 import java.lang.RuntimeException
 import java.time.LocalDateTime
 
+private const val ERR_MSG_NEGATIVE_PID = "PID can't be negative"
+private const val ERR_MSG_PID_LOW_VALUE = "PID can't be lower than the last one (%d)"
+
 data class Task(
     var pid: Int = 0, val priority: Priority = Priority.MEDIUM,
-    private val created: LocalDateTime = LocalDateTime.now()) {
+//    private val created: LocalDateTime = LocalDateTime.now()
+) {
 
     enum class Priority {
         LOW, MEDIUM, HIGH
@@ -16,11 +20,11 @@ data class Task(
 
     // Calculate new PID by incrementing by 1
     init {
-        var a = 4
         pid = when (pid) {
+            in Int.MIN_VALUE until 0 -> throw IllegalArgumentException(ERR_MSG_NEGATIVE_PID)
             0 -> ++lastId
             // To avoid duplicate ID problem use only incremental ID's
-            in Int.MIN_VALUE..lastId -> throw RuntimeException("PID can't be lower than the last one ($lastId)")
+            in 1..lastId -> throw IllegalArgumentException(ERR_MSG_PID_LOW_VALUE.format(lastId))
             else -> {
                 lastId = pid
                 lastId

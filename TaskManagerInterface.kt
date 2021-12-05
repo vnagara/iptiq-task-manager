@@ -1,7 +1,7 @@
 interface TaskManagerInterface {
 
     enum class SortBy {
-        CREATED, PRIORITY, ID
+        CREATED, PRIORITY, PID
     }
 
     /**
@@ -10,7 +10,7 @@ interface TaskManagerInterface {
     inside the Task Manager, otherwise we won’t accept
     any new process
      */
-    fun add(task: Task)
+    fun add(task: Task): Task
 
     /**
      * killing and removing from the TM list
@@ -23,24 +23,31 @@ interface TaskManagerInterface {
     process passed in the add() call has a higher priority
     compared to any of the existing one, we remove the
     lowest priority that is the oldest, otherwise we skip it
+
+     * @return Removed Task if it was substituted. Null otherwise
      */
-    fun addByPriority(task: Task): Boolean
+    fun addByPriority(task: Task): Task?
+
+    /**
+     * Find task by PID
+     */
+    fun get(pid: Int): Task?
 
     /**
      * Kill a task
      */
-    fun kill(task: Task)
+    fun kill(task: Task): Boolean
 
     fun killAll()
 
     /**
      * killing all processes with a specific priority
      */
-    fun killGroup()
+    fun killGroup(priority: Task.Priority): Boolean
 
     /**
      * to list() all the
     running processes, sorting them by time of creation, priority or id
      */
-    fun list(type: SortBy = SortBy.ID)
+    fun list(sortBy: SortBy = SortBy.CREATED): List<Task>
 }
